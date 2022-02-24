@@ -7,13 +7,14 @@
     "eject": "expo eject"
   },
   "dependencies": {
-    "@appbaseio/reactivesearch-native": "^0.11.1",
+    "@appbaseio/react-native-searchbox": "^1.7.0",
     "expo": "^44.0.0",
     "react": "17.0.1",
     "react-native": "0.64.3",
     "styled-components": "^5.3.3"
   },
   "devDependencies": {
+    "@expo/ngrok": "^4.1.0",
     "babel-preset-expo": "9.0.2"
   },
   "private": true
