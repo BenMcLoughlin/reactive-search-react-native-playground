@@ -1,85 +1,206 @@
-import React from 'react';
-import { StyleSheet, Text, View, ScrollView, Image } from 'react-native';
-import { ReactiveBase, DataSearch, ReactiveList, MultiDropdownRange } from '@appbaseio/reactivesearch-native';
-import styled from 'styled-components/native';
+import React, { useState, useRef } from 'react';
+import {
+    SearchBase,
+    SearchComponent,
+    SearchBox
+} from '@appbaseio/react-native-searchbox';
+import { MaterialIcons, AntDesign, Feather, Ionicons } from '@expo/vector-icons';
+import {
+    StyleSheet,
+    Text,
+    View,
+    Platform,
+    StatusBar,
+    ActivityIndicator,
+    FlatList,
+    Image,
+    SafeAreaView,
+    Modal
+} from 'react-native';
 
-export default class App extends React.Component {
-    render() {
-        return (
-            <ReactiveBase
-                credentials="04717bb076f7:be54685e-db84-4243-975b-5b32ee241d31"
-                url="https://appbase-demo-ansible-abxiydt-arc.searchbase.io"
-                app="good-books-ds"
-                credentials="04717bb076f7:be54685e-db84-4243-975b-5b32ee241d31"
-                enableAppbase>
-                <View style={styles.container}>
-                    <Searchbar
-                        componentId="searchbox"
-                        dataField={['original_title', 'original_title.search', 'authors', 'authors.search']}
-                        placeholder="Search for books"
-                    />
-                    {/* <MultiDropdownRange
-                        componentId="MultiDropdownRangeSensor"
-                        dataField="average_rating"
-                        data={[
-                            { start: 0, end: 3, label: 'Rating < 3' },
-                            { start: 3, end: 4, label: 'Rating 3 to 4' },
-                            { start: 4, end: 5, label: 'Rating > 4' }
-                        ]}
-                    /> */}
-                    <ReactiveList
-                        componentId="searchResult"
-                        dataField="original_title"
-                        size={19}
-                        onData={(res, i) => (
-                            <View style={styles.result} key={i}>
-                                <Image source={{ uri: res.image }} style={styles.image} />
-                                <View style={styles.item}>
-                                    <Text style={styles.title}>{res.original_title}</Text>
-                                    <Text>{res.authors}</Text>
-                                </View>
+import Footer from './footer';
+import Filters from './filters';
+
+const renderResultItem = ({ item }) => {
+    return (
+        <View style={styles.itemStyle}>
+            {item.images[0] && (
+                <Image
+                    style={styles.image}
+                    source={{
+                        uri: item.images[0].src
+                    }}
+                    resizeMode="contain"
+                />)}
+            <View style={{ flex: 1 }}>
+                <Text style={styles.textStyle}>{`${item.title} ${item.is_on_sale ? '(On Sale)' : ''}`}</Text>
+                <Text style={styles.textStyle}>{`$${Number(item.original_price / 100).toFixed(2)}`}</Text>
+            </View>
+        </View>
+    );
+};
+
+const renderItemSeparator = () => {
+    return (
+        // Flat List Item Separator
+        <View style={styles.itemSeparator} />
+    );
+};
+
+export default function App() {
+    const [showFilter, setShowFilter] = useState(false);
+
+    return (
+        <SafeAreaView style={styles.container}>
+            <SearchBase
+                index="products-dev"
+                credentials="546d75763354:6f486621-ce07-473c-95bd-6f55394745dd"
+                url="https://shophopper-poc-qhspmwv-arc.searchbase.io"
+                appbaseConfig={{
+                    recordAnalytics: true,
+                    enableQueryRules: true,
+                }}
+            >
+                <SearchBox
+                    id="search-component"
+                    dataField={[
+                        {
+                            field: 'title',
+                            weight: 3
+                        },
+                        {
+                            field: 'business_name',
+                            weight: 1
+                        }
+                    ]}
+                    renderNoSuggestion={() => <Text>No suggestions found</Text>}
+                    // autosuggest={false}
+                    enableRecentSearches
+                    // showAutoFill={false}
+                    enablePopularSuggestions
+                    maxPopularSuggestions={3}
+                    goBackIcon={props => <Ionicons {...props} />}
+                    autoFillIcon={props => <Feather name="arrow-up-left" {...props} />}
+                    recentSearchIcon={props => (
+                        <MaterialIcons name="history" {...props} />
+                    )}
+                    searchBarProps={{
+                        platform: 'android',
+                        searchIcon: props => <MaterialIcons name="search" {...props} />,
+                        clearIcon: props => <MaterialIcons name="clear" {...props} />
+                    }}
+                />
+                <SearchComponent
+                    id="result-component"
+                    dataField="title"
+                    size={10}
+                    react={{
+                        and: ['search-component', 'store-filter']
+                    }}
+                    preserveResults
+                >
+                    {({ results, loading, size, from, setValue, setFrom }) => {
+                        return (
+                            <View>
+                                {loading && !results.data.length ? (
+                                    <ActivityIndicator
+                                        style={styles.loader}
+                                        size="large"
+                                        color="#000"
+                                    />
+                                ) : (
+                                    <View>
+                                        {!results.data.length ? (
+                                            <Text style={styles.resultStats}>No results found</Text>
+                                        ) : (
+                                            <View style={styles.resultContainer}>
+                                                <Text style={styles.resultStats}>
+                                                    {results.numberOfResults} results found in{' '}
+                                                    {results.time}ms
+                                                </Text>
+                                                <FlatList
+                                                    data={results.data}
+                                                    keyboardShouldPersistTaps={'handled'}
+                                                    keyExtractor={item => item._id}
+                                                    ItemSeparatorComponent={renderItemSeparator}
+                                                    renderItem={renderResultItem}
+                                                    onEndReached={() => {
+                                                        const offset = (from || 0) + size;
+                                                        if (results.numberOfResults > offset) {
+                                                            setFrom((from || 0) + size);
+                                                        }
+                                                    }}
+                                                    onEndReachedThreshold={0.5}
+                                                    ListFooterComponent={
+                                                        loading ? (
+                                                            <ActivityIndicator size="large" color="#000" />
+                                                        ) : null
+                                                    }
+                                                />
+                                            </View>
+                                        )}
+                                    </View>
+                                )}
                             </View>
-                        )}
-                        pagination
-                        showResultStats={false}
-                        react={{
-                            and: ['bookSensor']
-                        }}
-                    />
-                </View>
-            </ReactiveBase>
-        );
-    }
+                        );
+                    }}
+                </SearchComponent>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={showFilter}
+                    onRequestClose={() => {
+                        setShowFilter(false);
+                    }}
+                >
+                    <SafeAreaView style={styles.container}>
+                        <Filters />
+                        <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
+                    </SafeAreaView>
+                </Modal>
+            </SearchBase>
+            <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
+        </SafeAreaView>
+    );
 }
 
 const styles = StyleSheet.create({
     container: {
-        paddingTop: 40,
         flex: 1,
-        backgroundColor: '#fff'
+        backgroundColor: '#fff',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0
+    },
+    loader: {
+        marginTop: 50
+    },
+    itemSeparator: {
+        height: 0.5,
+        width: '100%',
+        backgroundColor: '#C8C8C8'
     },
     image: {
         width: 100,
-        height: 100
+        marginRight: 10
     },
-    result: {
+    itemStyle: {
+        flex: 1,
         flexDirection: 'row',
-        width: '100%',
-        margin: 5,
-        alignItems: 'center'
+        padding: 10,
+        height: 170
     },
-    item: {
-        flexDirection: 'column',
-        paddingLeft: 10
+    star: {
+        flexDirection: 'row',
+        paddingBottom: 5
     },
-    title: {
-        fontWeight: 'bold'
+    textStyle: {
+        flexWrap: 'wrap',
+        paddingBottom: 5
+    },
+    resultStats: {
+        padding: 10
+    },
+    rating: {
+        marginLeft: 10
     }
 });
 
-const Wrapper = styled.View`
-    background: yellow;
-    height: 100px;
-    width: 100px;
-`;
-const Searchbar = styled(DataSearch)``;
