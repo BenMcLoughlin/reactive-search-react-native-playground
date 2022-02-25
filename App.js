@@ -14,21 +14,27 @@ import {
     ActivityIndicator,
     FlatList,
     Image,
-    SafeAreaView
+    SafeAreaView,
+    Modal
 } from 'react-native';
+
+import Footer from './footer';
+import Filters from './filters';
 
 const renderResultItem = ({ item }) => {
     return (
         <View style={styles.itemStyle}>
-            <Image
-                style={styles.image}
-                source={{
-                    uri: item.images[0].src
-                }}
-                resizeMode="contain"
-            />
+            {item.images[0] && (
+                <Image
+                    style={styles.image}
+                    source={{
+                        uri: item.images[0].src
+                    }}
+                    resizeMode="contain"
+                />)}
             <View style={{ flex: 1 }}>
                 <Text style={styles.textStyle}>{`${item.title} ${item.is_on_sale ? '(On Sale)' : ''}`}</Text>
+                <Text style={styles.textStyle}>{`$${Number(item.original_price / 100).toFixed(2)}`}</Text>
             </View>
         </View>
     );
@@ -42,6 +48,8 @@ const renderItemSeparator = () => {
 };
 
 export default function App() {
+    const [showFilter, setShowFilter] = useState(false);
+
     return (
         <SafeAreaView style={styles.container}>
             <SearchBase
@@ -58,6 +66,10 @@ export default function App() {
                     dataField={[
                         {
                             field: 'title',
+                            weight: 3
+                        },
+                        {
+                            field: 'business_name',
                             weight: 1
                         }
                     ]}
@@ -65,14 +77,17 @@ export default function App() {
                     // autosuggest={false}
                     enableRecentSearches
                     // showAutoFill={false}
-                    // enablePopularSuggestions
-                    goBackIcon={(props) => <Ionicons {...props} />}
-                    autoFillIcon={(props) => <Feather name="arrow-up-left" {...props} />}
-                    recentSearchIcon={(props) => <MaterialIcons name="history" {...props} />}
+                    enablePopularSuggestions
+                    maxPopularSuggestions={3}
+                    goBackIcon={props => <Ionicons {...props} />}
+                    autoFillIcon={props => <Feather name="arrow-up-left" {...props} />}
+                    recentSearchIcon={props => (
+                        <MaterialIcons name="history" {...props} />
+                    )}
                     searchBarProps={{
                         platform: 'android',
-                        searchIcon: (props) => <MaterialIcons name="search" {...props} />,
-                        clearIcon: (props) => <MaterialIcons name="clear" {...props} />,
+                        searchIcon: props => <MaterialIcons name="search" {...props} />,
+                        clearIcon: props => <MaterialIcons name="clear" {...props} />
                     }}
                 />
                 <SearchComponent
@@ -80,7 +95,7 @@ export default function App() {
                     dataField="title"
                     size={10}
                     react={{
-                        and: ['search-component', 'author-filter']
+                        and: ['search-component', 'store-filter']
                     }}
                     preserveResults
                 >
@@ -130,7 +145,21 @@ export default function App() {
                         );
                     }}
                 </SearchComponent>
+                <Modal
+                    animationType="slide"
+                    transparent={true}
+                    visible={showFilter}
+                    onRequestClose={() => {
+                        setShowFilter(false);
+                    }}
+                >
+                    <SafeAreaView style={styles.container}>
+                        <Filters />
+                        <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
+                    </SafeAreaView>
+                </Modal>
             </SearchBase>
+            <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
         </SafeAreaView>
     );
 }
