@@ -19,7 +19,7 @@ import {
 } from 'react-native';
 
 import Footer from './footer';
-import Filters from './filters';
+import Filters, { AllFilters } from './filters';
 
 const renderResultItem = ({ item }) => {
     return (
@@ -79,6 +79,7 @@ export default function App() {
                     // showAutoFill={false}
                     enablePopularSuggestions
                     maxPopularSuggestions={3}
+                    enablePredictiveSuggestions
                     goBackIcon={props => <Ionicons {...props} />}
                     autoFillIcon={props => <Feather name="arrow-up-left" {...props} />}
                     recentSearchIcon={props => (
@@ -89,13 +90,16 @@ export default function App() {
                         searchIcon: props => <MaterialIcons name="search" {...props} />,
                         clearIcon: props => <MaterialIcons name="clear" {...props} />
                     }}
+                    react={{
+                        and: AllFilters
+                    }}
                 />
                 <SearchComponent
                     id="result-component"
                     dataField="title"
                     size={10}
                     react={{
-                        and: ['search-component', 'store-filter']
+                        and: ['search-component', ...AllFilters],
                     }}
                     preserveResults
                 >
@@ -153,10 +157,10 @@ export default function App() {
                         setShowFilter(false);
                     }}
                 >
-                    <SafeAreaView style={styles.container}>
+                    <View style={styles.container}>
                         <Filters />
                         <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
-                    </SafeAreaView>
+                    </View>
                 </Modal>
             </SearchBase>
             <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
