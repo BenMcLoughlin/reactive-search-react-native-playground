@@ -31,7 +31,6 @@ const GenderFilterId = 'gender-filter';
 export const AllFilters = [BucketFilterId, StoreFilterId, SizeFilterId, GenderFilterId];
 
 const Filters = () => {
-  //TODO: Fix scrolling.
   return (
     <ScrollView style={styles.filterContainer}>
       <Filter id={StoreFilterId} dataField="business_name.keyword" title="Store" />
