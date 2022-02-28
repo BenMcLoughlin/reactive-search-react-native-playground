@@ -1,25 +1,12 @@
 import React, { useState, useRef } from 'react';
-import {
-    SearchBase,
-    SearchComponent,
-    SearchBox
-} from '@appbaseio/react-native-searchbox';
+import { SearchBase, SearchComponent, SearchBox } from '@appbaseio/react-native-searchbox';
 import { MaterialIcons, AntDesign, Feather, Ionicons } from '@expo/vector-icons';
-import {
-    StyleSheet,
-    Text,
-    View,
-    Platform,
-    StatusBar,
-    ActivityIndicator,
-    FlatList,
-    Image,
-    SafeAreaView,
-    Modal
-} from 'react-native';
+import { StyleSheet, Text, View, Platform, StatusBar, ActivityIndicator, FlatList, Image, SafeAreaView, Modal } from 'react-native';
 
 import Footer from './footer';
 import Filters, { AllFilters } from './filters';
+import { FiltersV2 } from './screens/filters/FiltersV2';
+import { GridTile } from './components/tiles/GridTile';
 
 const renderResultItem = ({ item }) => {
     return (
@@ -31,7 +18,8 @@ const renderResultItem = ({ item }) => {
                         uri: item.images[0].src
                     }}
                     resizeMode="contain"
-                />)}
+                />
+            )}
             <View style={{ flex: 1 }}>
                 <Text style={styles.textStyle}>{`${item.title} ${item.is_on_sale ? '(On Sale)' : ''}`}</Text>
                 <Text style={styles.textStyle}>{`$${Number(item.original_price / 100).toFixed(2)}`}</Text>
@@ -58,9 +46,8 @@ export default function App() {
                 url="https://shophopper-poc-qhspmwv-arc.searchbase.io"
                 appbaseConfig={{
                     recordAnalytics: true,
-                    enableQueryRules: true,
-                }}
-            >
+                    enableQueryRules: true
+                }}>
                 <SearchBox
                     id="search-component"
                     dataField={[
@@ -80,16 +67,14 @@ export default function App() {
                     enablePopularSuggestions
                     maxPopularSuggestions={3}
                     enablePredictiveSuggestions
-                    goBackIcon={props => <Ionicons {...props} />}
-                    autoFillIcon={props => <Feather name="arrow-up-left" {...props} />}
-                    recentSearchIcon={props => (
-                        <MaterialIcons name="history" {...props} />
-                    )}
-                    searchBarProps={{
-                        platform: 'android',
-                        searchIcon: props => <MaterialIcons name="search" {...props} />,
-                        clearIcon: props => <MaterialIcons name="clear" {...props} />
-                    }}
+                    goBackIcon={(props) => <Ionicons {...props} />}
+                    autoFillIcon={(props) => <Feather name="arrow-up-left" {...props} />}
+                    recentSearchIcon={(props) => <MaterialIcons name="history" {...props} />}
+                    // searchBarProps={{
+                    //     platform: 'android',
+                    //     searchIcon: props => <MaterialIcons name="search" {...props} />,
+                    //     clearIcon: props => <MaterialIcons name="clear" {...props} />
+                    // }}
                     react={{
                         and: AllFilters
                     }}
@@ -99,19 +84,14 @@ export default function App() {
                     dataField="title"
                     size={10}
                     react={{
-                        and: ['search-component', ...AllFilters],
+                        and: ['search-component', ...AllFilters]
                     }}
-                    preserveResults
-                >
+                    preserveResults>
                     {({ results, loading, size, from, setValue, setFrom }) => {
                         return (
                             <View>
                                 {loading && !results.data.length ? (
-                                    <ActivityIndicator
-                                        style={styles.loader}
-                                        size="large"
-                                        color="#000"
-                                    />
+                                    <ActivityIndicator style={styles.loader} size="large" color="#000" />
                                 ) : (
                                     <View>
                                         {!results.data.length ? (
@@ -119,15 +99,16 @@ export default function App() {
                                         ) : (
                                             <View style={styles.resultContainer}>
                                                 <Text style={styles.resultStats}>
-                                                    {results.numberOfResults} results found in{' '}
-                                                    {results.time}ms
+                                                    {results.numberOfResults} results found in {results.time}ms
                                                 </Text>
                                                 <FlatList
                                                     data={results.data}
                                                     keyboardShouldPersistTaps={'handled'}
-                                                    keyExtractor={item => item._id}
-                                                    ItemSeparatorComponent={renderItemSeparator}
-                                                    renderItem={renderResultItem}
+                                                    keyExtractor={(item) => item._id}
+                                                    numColumns={2}
+                                                    renderItem={({ item }) => {
+                                                        return <GridTile onPress={() => console.log('hi')} key={item.id} product={item} />;
+                                                    }}
                                                     onEndReached={() => {
                                                         const offset = (from || 0) + size;
                                                         if (results.numberOfResults > offset) {
@@ -135,11 +116,7 @@ export default function App() {
                                                         }
                                                     }}
                                                     onEndReachedThreshold={0.5}
-                                                    ListFooterComponent={
-                                                        loading ? (
-                                                            <ActivityIndicator size="large" color="#000" />
-                                                        ) : null
-                                                    }
+                                                    ListFooterComponent={loading ? <ActivityIndicator size="large" color="#000" /> : null}
                                                 />
                                             </View>
                                         )}
@@ -152,13 +129,13 @@ export default function App() {
                 <Modal
                     animationType="slide"
                     transparent={true}
-                    visible={showFilter}
+                    visible={showFilter === 'V1' || showFilter === 'V2'}
                     onRequestClose={() => {
                         setShowFilter(false);
-                    }}
-                >
+                    }}>
                     <View style={styles.container}>
-                        <Filters />
+                        {showFilter === 'V1' && <Filters />}
+                        {showFilter === 'V2' && <FiltersV2 />}
                         <Footer showFilter={showFilter} setShowFilter={setShowFilter} />
                     </View>
                 </Modal>
@@ -207,4 +184,3 @@ const styles = StyleSheet.create({
         marginLeft: 10
     }
 });
-
